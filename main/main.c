@@ -11,6 +11,14 @@ void matmul_naive_i16(const mat_i16 *A, const mat_i16 *B, mat_i16 *C, int n);
 void matmul_naive_i32(const mat_i32 *A, const mat_i32 *B, mat_i32 *C, int n);
 void matmul_naive_f32(const mat_f32 *A, const mat_f32 *B, mat_f32 *C, int n);
 
+void matmul_opt_i16(const mat_i16 *A, const mat_i16 *B, mat_i16 *C, int n);
+void matmul_opt_i32(const mat_i32 *A, const mat_i32 *B, mat_i32 *C, int n);
+void matmul_opt_f32(const mat_f32 *A, const mat_f32 *B, mat_f32 *C, int n);
+
+void matmul_tiled_i16(const mat_i16 *A, const mat_i16 *B, mat_i16 *C, int n);
+void matmul_tiled_i32(const mat_i32 *A, const mat_i32 *B, mat_i32 *C, int n);
+void matmul_tiled_f32(const mat_f32 *A, const mat_f32 *B, mat_f32 *C, int n);
+
 // ── Sort helpers ──────────────────────────────────────────────
 static void sort_u32(uint32_t *arr, int n) {
     for (int i = 1; i < n; i++) {
@@ -80,8 +88,12 @@ static void print_result(const char *dtype, bench_samples_t *s) {
            (long long)med_u);
 }
 
-// ── Run benchmark for one size ────────────────────────────────
-static void run_bench_size(const char *label, int n)
+// ── Run benchmark for one impl, one size ─────────────────────
+static void run_bench_size(
+    const char *label, int n,
+    void (*fn_i16)(const mat_i16*, const mat_i16*, mat_i16*, int),
+    void (*fn_i32)(const mat_i32*, const mat_i32*, mat_i32*, int),
+    void (*fn_f32)(const mat_f32*, const mat_f32*, mat_f32*, int))
 {
     int elems = n * n;
     bench_samples_t s;
@@ -102,10 +114,9 @@ static void run_bench_size(const char *label, int n)
             fill_i16(A, elems, 0xAABB);
             fill_i16(B, elems, 0xCCDD);
             for (int r = 0; r < BENCH_RUNS; r++) {
-                
                 memset(C, 0, elems * sizeof(mat_i16));
                 BENCH_CYCLES_START(); BENCH_US_START();
-                matmul_naive_i16(A, B, C, n);
+                fn_i16(A, B, C, n);
                 s.cycles[r] = BENCH_CYCLES_STOP();
                 s.us[r]     = BENCH_US_STOP();
             }
@@ -126,10 +137,9 @@ static void run_bench_size(const char *label, int n)
             fill_i32(A, elems, 0xAABB);
             fill_i32(B, elems, 0xCCDD);
             for (int r = 0; r < BENCH_RUNS; r++) {
-                
                 memset(C, 0, elems * sizeof(mat_i32));
                 BENCH_CYCLES_START(); BENCH_US_START();
-                matmul_naive_i32(A, B, C, n);
+                fn_i32(A, B, C, n);
                 s.cycles[r] = BENCH_CYCLES_STOP();
                 s.us[r]     = BENCH_US_STOP();
             }
@@ -150,10 +160,9 @@ static void run_bench_size(const char *label, int n)
             fill_f32(A, elems, 0xAABB);
             fill_f32(B, elems, 0xCCDD);
             for (int r = 0; r < BENCH_RUNS; r++) {
-                
                 memset(C, 0, elems * sizeof(mat_f32));
                 BENCH_CYCLES_START(); BENCH_US_START();
-                matmul_naive_f32(A, B, C, n);
+                fn_f32(A, B, C, n);
                 s.cycles[r] = BENCH_CYCLES_STOP();
                 s.us[r]     = BENCH_US_STOP();
             }
@@ -195,9 +204,29 @@ void app_main(void) {
 
     printf("\n=== matmul_naive (-O0) ===\n");
     for (int si = 0; si < NUM_SIZES; si++) {
-        run_bench_size("naive_O0", MATRIX_SIZES[si]);
+        run_bench_size("naive_O0", MATRIX_SIZES[si],
+                       matmul_naive_i16,
+                       matmul_naive_i32,
+                       matmul_naive_f32);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
+    printf("\n=== matmul_opt (-O3) ===\n");
+    for (int si = 0; si < NUM_SIZES; si++) {
+        run_bench_size("opt_O3", MATRIX_SIZES[si],
+                       matmul_opt_i16,
+                       matmul_opt_i32,
+                       matmul_opt_f32);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    printf("\n=== matmul_tiled (T=32, -O3) ===\n");
+for (int si = 0; si < NUM_SIZES; si++) {
+    run_bench_size("tiled_O3", MATRIX_SIZES[si],
+                   matmul_tiled_i16,
+                   matmul_tiled_i32,
+                   matmul_tiled_f32);
+    vTaskDelay(pdMS_TO_TICKS(10));
+}
     printf("\n=== Done ===\n");
 }
