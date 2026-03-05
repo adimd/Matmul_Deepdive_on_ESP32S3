@@ -19,6 +19,10 @@ void matmul_tiled_i16(const mat_i16 *A, const mat_i16 *B, mat_i16 *C, int n);
 void matmul_tiled_i32(const mat_i32 *A, const mat_i32 *B, mat_i32 *C, int n);
 void matmul_tiled_f32(const mat_f32 *A, const mat_f32 *B, mat_f32 *C, int n);
 
+void matmul_espdsp_i16(const mat_i16 *A, const mat_i16 *B, mat_i16 *C, int n);
+void matmul_espdsp_i32(const mat_i32 *A, const mat_i32 *B, mat_i32 *C, int n);
+void matmul_espdsp_f32(const mat_f32 *A, const mat_f32 *B, mat_f32 *C, int n);
+
 // ── Sort helpers ──────────────────────────────────────────────
 static void sort_u32(uint32_t *arr, int n) {
     for (int i = 1; i < n; i++) {
@@ -228,5 +232,15 @@ for (int si = 0; si < NUM_SIZES; si++) {
                    matmul_tiled_f32);
     vTaskDelay(pdMS_TO_TICKS(10));
 }
+
+printf("\n=== matmul_espdsp (PIE SIMD via esp-dsp, i16 only) ===\n");
+for (int si = 0; si < NUM_SIZES; si++) {
+    run_bench_size("espdsp", MATRIX_SIZES[si],
+                   matmul_espdsp_i16,
+                   matmul_espdsp_i32,
+                   matmul_espdsp_f32);
+    vTaskDelay(pdMS_TO_TICKS(10));
+}
+
     printf("\n=== Done ===\n");
 }

@@ -4,17 +4,11 @@ idf_component_register(
         "matmul_naive.c"
         "matmul_opt.c"
         "matmul_tiled.c"
+        "matmul_espdsp.c"
     INCLUDE_DIRS "."
 )
 
-set_source_files_properties(matmul_naive.c PROPERTIES
-    COMPILE_FLAGS "-O0 -fno-inline"
-)
-
-set_source_files_properties(matmul_opt.c PROPERTIES
-    COMPILE_FLAGS "-O3"
-)
-
-set_source_files_properties(matmul_tiled.c PROPERTIES
-    COMPILE_FLAGS "-O3"
-)
+set_source_files_properties(matmul_naive.c PROPERTIES COMPILE_FLAGS "-O0 -fno-inline")
+set_source_files_properties(matmul_opt.c   PROPERTIES COMPILE_FLAGS "-O3")
+set_source_files_properties(matmul_tiled.c PROPERTIES COMPILE_FLAGS "-O3")
+set_source_files_properties(matmul_espdsp.c PROPERTIES COMPILE_FLAGS "-O3")
